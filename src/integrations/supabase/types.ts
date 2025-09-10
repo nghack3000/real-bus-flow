@@ -272,6 +272,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      generate_seats_for_trip: {
+        Args: { trip_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       bus_type: "standard" | "luxury" | "double_decker"
