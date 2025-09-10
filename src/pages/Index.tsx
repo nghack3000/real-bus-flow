@@ -1,13 +1,254 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layout } from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { MapPin, Clock, Bus, Search, Filter } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface Trip {
+  id: string;
+  route_from: string;
+  route_to: string;
+  departure_time: string;
+  arrival_time: string;
+  bus_type: string;
+  total_seats: number;
+  base_price: number;
+  available_seats: number;
+}
 
 const Index = () => {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [filteredTrips, setFilteredTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchFrom, setSearchFrom] = useState('');
+  const [searchTo, setSearchTo] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  useEffect(() => {
+    filterTrips();
+  }, [trips, searchFrom, searchTo, searchDate]);
+
+  const fetchTrips = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bus_trips')
+        .select(`
+          *,
+          seats!inner(status)
+        `)
+        .gte('booking_window_end', new Date().toISOString())
+        .gte('departure_time', new Date().toISOString())
+        .order('departure_time', { ascending: true });
+
+      if (error) throw error;
+
+      // Calculate available seats for each trip
+      const tripsWithAvailableSeats = (data || []).map(trip => {
+        const seatCounts = trip.seats.reduce((acc: any, seat: any) => {
+          acc[seat.status] = (acc[seat.status] || 0) + 1;
+          return acc;
+        }, {});
+
+        return {
+          ...trip,
+          available_seats: seatCounts.available || 0,
+          seats: undefined, // Remove seats array to clean up response
+        };
+      });
+
+      setTrips(tripsWithAvailableSeats);
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available trips",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterTrips = () => {
+    let filtered = trips;
+
+    if (searchFrom) {
+      filtered = filtered.filter(trip =>
+        trip.route_from.toLowerCase().includes(searchFrom.toLowerCase())
+      );
+    }
+
+    if (searchTo) {
+      filtered = filtered.filter(trip =>
+        trip.route_to.toLowerCase().includes(searchTo.toLowerCase())
+      );
+    }
+
+    if (searchDate) {
+      const searchDateTime = new Date(searchDate);
+      filtered = filtered.filter(trip => {
+        const tripDate = new Date(trip.departure_time);
+        return tripDate.toDateString() === searchDateTime.toDateString();
+      });
+    }
+
+    setFilteredTrips(filtered);
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <Layout>
+      <div className="space-y-6">
+        {/* Hero Section */}
+        <div className="text-center py-12 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+          <h1 className="text-4xl font-bold mb-4">Find Your Perfect Bus Journey</h1>
+          <p className="text-xl text-muted-foreground mb-8">
+            Book comfortable, reliable bus tickets for your next trip
+          </p>
+        </div>
+
+        {/* Search Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Search Trips
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">From</label>
+                <Input
+                  placeholder="Departure city"
+                  value={searchFrom}
+                  onChange={(e) => setSearchFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">To</label>
+                <Input
+                  placeholder="Destination city"
+                  value={searchTo}
+                  onChange={(e) => setSearchTo(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date</label>
+                <Input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">&nbsp;</label>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setSearchFrom('');
+                    setSearchTo('');
+                    setSearchDate('');
+                  }}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Available Trips */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Available Trips</h2>
+          
+          {filteredTrips.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Bus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No trips found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search criteria or check back later for new trips
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTrips.map((trip) => (
+                <Card key={trip.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg">
+                        {trip.route_from} → {trip.route_to}
+                      </CardTitle>
+                      <Badge variant="secondary">{trip.bus_type}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{trip.route_from} to {trip.route_to}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col">
+                        <span>{format(new Date(trip.departure_time), 'MMM dd, yyyy')}</span>
+                        <span className="text-muted-foreground">
+                          {format(new Date(trip.departure_time), 'h:mm a')} - {format(new Date(trip.arrival_time), 'h:mm a')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <Bus className="h-4 w-4 text-muted-foreground" />
+                      <span>{trip.available_seats} of {trip.total_seats} seats available</span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold">From ${trip.base_price}</span>
+                      <Badge variant={trip.available_seats > 10 ? "default" : trip.available_seats > 0 ? "destructive" : "secondary"}>
+                        {trip.available_seats > 10 ? "Available" : trip.available_seats > 0 ? "Few Left" : "Sold Out"}
+                      </Badge>
+                    </div>
+
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/trip/${trip.id}`)}
+                      disabled={trip.available_seats === 0}
+                    >
+                      {trip.available_seats === 0 ? 'Sold Out' : 'Select Seats'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 
