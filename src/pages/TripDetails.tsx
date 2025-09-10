@@ -200,6 +200,37 @@ const TripDetails = () => {
         description: `Your booking reference is ${bookingReference}`,
       });
 
+      // Send confirmation emails
+      try {
+        const { data: tripData } = await supabase
+          .from('bus_trips')
+          .select('*')
+          .eq('id', tripId!)
+          .single();
+
+        if (tripData) {
+          await supabase.functions.invoke('send-booking-confirmation', {
+            body: {
+              bookingReference,
+              passengerName: profile?.full_name || user.user_metadata?.full_name || '',
+              passengerEmail: profile?.email || user.email || '',
+              tripDetails: {
+                routeFrom: tripData.route_from,
+                routeTo: tripData.route_to,
+                departureTime: tripData.departure_time,
+                arrivalTime: tripData.arrival_time,
+                busType: tripData.bus_type,
+              },
+              seatNumbers: selectedSeats.map(s => s.seat_number),
+              totalAmount,
+            },
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation emails:', emailError);
+        // Don't block the booking process if email fails
+      }
+
       navigate('/bookings');
     } catch (error) {
       console.error('Error completing booking:', error);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MapPin, Clock, Bus, Search, Filter } from 'lucide-react';
+import { useRealtimeTrips, useTripUpdates } from '@/hooks/useRealtimeTrips';
+import { MapPin, Clock, Bus, Search, Filter, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Trip {
@@ -31,6 +32,9 @@ const Index = () => {
   const [searchDate, setSearchDate] = useState('');
   const navigate = useNavigate();
 
+  // Set up realtime subscriptions for new trips
+  useRealtimeTrips();
+
   useEffect(() => {
     fetchTrips();
   }, []);
@@ -38,6 +42,18 @@ const Index = () => {
   useEffect(() => {
     filterTrips();
   }, [trips, searchFrom, searchTo, searchDate]);
+
+  // Listen to realtime trip updates
+  useTripUpdates(useCallback((update: any) => {
+    if (update.eventType === 'INSERT') {
+      // Fetch fresh trip data to get available seats count
+      fetchTrips();
+      toast({
+        title: "New trip available!",
+        description: `${update.new.route_from} → ${update.new.route_to}`,
+      });
+    }
+  }, []));
 
   const fetchTrips = async () => {
     try {
@@ -196,78 +212,84 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Available Trips */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Available Trips</h2>
-          
-          {filteredTrips.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Bus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No trips found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search criteria or check back later for new trips
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTrips.map((trip) => (
-                <Card key={trip.id} className="hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-l-4 border-l-primary group">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                        {trip.route_from} → {trip.route_to}
-                      </CardTitle>
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-gradient-to-r from-primary/10 to-secondary/10 text-primary border-primary/20"
-                      >
-                        {trip.bus_type}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{trip.route_from} to {trip.route_to}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex flex-col">
-                        <span>{format(new Date(trip.departure_time), 'MMM dd, yyyy')}</span>
-                        <span className="text-muted-foreground">
-                          {format(new Date(trip.departure_time), 'h:mm a')} - {format(new Date(trip.arrival_time), 'h:mm a')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <Bus className="h-4 w-4 text-muted-foreground" />
-                      <span>{trip.available_seats} of {trip.total_seats} seats available</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">From ${trip.base_price}</span>
-                      <Badge variant={trip.available_seats > 10 ? "default" : trip.available_seats > 0 ? "destructive" : "secondary"}>
-                        {trip.available_seats > 10 ? "Available" : trip.available_seats > 0 ? "Few Left" : "Sold Out"}
-                      </Badge>
-                    </div>
-
-                    <Button 
-                      className="w-full" 
-                      onClick={() => navigate(`/trip/${trip.id}`)}
-                      disabled={trip.available_seats === 0}
-                    >
-                      {trip.available_seats === 0 ? 'Sold Out' : 'Select Seats'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+        {/* Available Trips Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Calendar className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold">Available Trips</h2>
+            <Badge variant="outline" className="text-primary border-primary">
+              {filteredTrips.length} trips found
+            </Badge>
+          </div>
         </div>
+        
+        {filteredTrips.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Bus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No trips found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search criteria or check back later for new trips
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTrips.map((trip) => (
+              <Card key={trip.id} className="hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-l-4 border-l-primary group">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                      {trip.route_from} → {trip.route_to}
+                    </CardTitle>
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-gradient-to-r from-primary/10 to-secondary/10 text-primary border-primary/20"
+                    >
+                      {trip.bus_type}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{trip.route_from} to {trip.route_to}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex flex-col">
+                      <span>{format(new Date(trip.departure_time), 'MMM dd, yyyy')}</span>
+                      <span className="text-muted-foreground">
+                        {format(new Date(trip.departure_time), 'h:mm a')} - {format(new Date(trip.arrival_time), 'h:mm a')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Bus className="h-4 w-4 text-muted-foreground" />
+                    <span>{trip.available_seats} of {trip.total_seats} seats available</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold">From ${trip.base_price}</span>
+                    <Badge variant={trip.available_seats > 10 ? "default" : trip.available_seats > 0 ? "destructive" : "secondary"}>
+                      {trip.available_seats > 10 ? "Available" : trip.available_seats > 0 ? "Few Left" : "Sold Out"}
+                    </Badge>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    onClick={() => navigate(`/trip/${trip.id}`)}
+                    disabled={trip.available_seats === 0}
+                  >
+                    {trip.available_seats === 0 ? 'Sold Out' : 'Select Seats'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );
