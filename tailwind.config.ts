@@ -57,6 +57,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        seat: {
+          available: "hsl(var(--seat-available))",
+          "available-foreground": "hsl(var(--seat-available-foreground))",
+          selected: "hsl(var(--seat-selected))",
+          "selected-foreground": "hsl(var(--seat-selected-foreground))",
+          held: "hsl(var(--seat-held))",
+          "held-foreground": "hsl(var(--seat-held-foreground))",
+          sold: "hsl(var(--seat-sold))",
+          "sold-foreground": "hsl(var(--seat-sold-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -158,7 +158,9 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
           .update({ status: 'available' })
           .eq('id', seat.id);
 
-        setSelectedSeats(prev => prev.filter(id => id !== seat.id));
+        const newSelectedSeats = selectedSeats.filter(id => id !== seat.id);
+        setSelectedSeats(newSelectedSeats);
+        onSeatSelect?.(newSelectedSeats);
         toast({
           title: "Seat released",
           description: `Seat ${seat.seat_number} has been released`,
@@ -196,8 +198,9 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
 
       if (seatError) throw seatError;
 
-      setSelectedSeats(prev => [...prev, seat.id]);
-      onSeatSelect?.(selectedSeats.concat(seat.id));
+      const newSelectedSeats = [...selectedSeats, seat.id];
+      setSelectedSeats(newSelectedSeats);
+      onSeatSelect?.(newSelectedSeats);
 
       toast({
         title: "Seat held",
@@ -218,13 +221,13 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
     
     switch (status) {
       case 'sold':
-        return 'bg-destructive hover:bg-destructive cursor-not-allowed';
+        return 'bg-seat-sold hover:bg-seat-sold text-seat-sold-foreground cursor-not-allowed transition-all duration-200';
       case 'held':
-        return 'bg-muted hover:bg-muted cursor-not-allowed';
+        return 'bg-seat-held hover:bg-seat-held text-seat-held-foreground cursor-not-allowed transition-all duration-200';
       case 'my-hold':
-        return 'bg-primary hover:bg-primary/90 cursor-pointer';
+        return 'bg-seat-selected hover:bg-seat-selected/90 text-seat-selected-foreground cursor-pointer transition-all duration-200 shadow-lg transform scale-105';
       default:
-        return 'bg-secondary hover:bg-secondary/80 cursor-pointer';
+        return 'bg-seat-available hover:bg-seat-available/90 text-seat-available-foreground cursor-pointer transition-all duration-200 hover:shadow-md hover:transform hover:scale-105';
     }
   };
 
@@ -271,20 +274,20 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
         <CardTitle>Select Your Seats</CardTitle>
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-secondary rounded"></div>
-            <span>Available</span>
+            <div className="w-4 h-4 bg-seat-available rounded shadow-sm"></div>
+            <span className="font-medium">Available</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary rounded"></div>
-            <span>Your Hold</span>
+            <div className="w-4 h-4 bg-seat-selected rounded shadow-sm"></div>
+            <span className="font-medium">Your Selection</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-muted rounded"></div>
-            <span>Held by Others</span>
+            <div className="w-4 h-4 bg-seat-held rounded shadow-sm"></div>
+            <span className="font-medium">Held by Others</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-destructive rounded"></div>
-            <span>Sold</span>
+            <div className="w-4 h-4 bg-seat-sold rounded shadow-sm"></div>
+            <span className="font-medium">Sold</span>
           </div>
         </div>
       </CardHeader>

@@ -120,11 +120,27 @@ const Index = () => {
     <Layout>
       <div className="space-y-6">
         {/* Hero Section */}
-        <div className="text-center py-12 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
-          <h1 className="text-4xl font-bold mb-4">Find Your Perfect Bus Journey</h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Book comfortable, reliable bus tickets for your next trip
+        <div className="text-center py-16 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 rounded-2xl border border-primary/20 shadow-lg">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            Find Your Perfect Bus Journey
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Book comfortable, reliable bus tickets with real-time seat selection and instant confirmation
           </p>
+          <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-seat-available rounded-full"></div>
+              <span>Real-time availability</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-seat-selected rounded-full"></div>
+              <span>Instant booking</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-accent rounded-full"></div>
+              <span>Secure payment</span>
+            </div>
+          </div>
         </div>
 
         {/* Search Filters */}
@@ -197,13 +213,18 @@ const Index = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTrips.map((trip) => (
-                <Card key={trip.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardHeader>
+                <Card key={trip.id} className="hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-l-4 border-l-primary group">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg">
+                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
                         {trip.route_from} → {trip.route_to}
                       </CardTitle>
-                      <Badge variant="secondary">{trip.bus_type}</Badge>
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-gradient-to-r from-primary/10 to-secondary/10 text-primary border-primary/20"
+                      >
+                        {trip.bus_type}
+                      </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
