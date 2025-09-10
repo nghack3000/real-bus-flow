@@ -82,7 +82,7 @@ const generatePdfContent = (booking: BookingConfirmationRequest): string => {
       </div>
 
       <div class="total">
-        Total Amount: $${booking.totalAmount.toFixed(2)}
+        Total Amount: ₹${booking.totalAmount.toFixed(2)}
       </div>
 
       <div class="qr-note">
@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p><strong>Departure:</strong> ${new Date(booking.tripDetails.departureTime).toLocaleString()}</p>
             <p><strong>Arrival:</strong> ${new Date(booking.tripDetails.arrivalTime).toLocaleString()}</p>
             <p><strong>Seat(s):</strong> ${booking.seatNumbers.join(", ")}</p>
-            <p><strong>Total:</strong> $${booking.totalAmount.toFixed(2)}</p>
+            <p><strong>Total:</strong> ₹${booking.totalAmount.toFixed(2)}</p>
             
             <div style="background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0;">
               📱 <strong>Important:</strong> Please present this confirmation at boarding.
@@ -172,7 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p><strong>Route:</strong> ${booking.tripDetails.routeFrom} → ${booking.tripDetails.routeTo}</p>
               <p><strong>Departure:</strong> ${new Date(booking.tripDetails.departureTime).toLocaleString()}</p>
               <p><strong>Seats:</strong> ${booking.seatNumbers.join(", ")}</p>
-              <p><strong>Revenue:</strong> $${booking.totalAmount.toFixed(2)}</p>
+              <p><strong>Revenue:</strong> ₹${booking.totalAmount.toFixed(2)}</p>
             </div>
             
             <div style="padding: 20px; text-align: center; color: #666;">

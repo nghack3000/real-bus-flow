@@ -272,7 +272,7 @@ const Index = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold">From ${trip.base_price}</span>
+                    <span className="text-lg font-bold">From ₹{trip.base_price}</span>
                     <Badge variant={trip.available_seats > 10 ? "default" : trip.available_seats > 0 ? "destructive" : "secondary"}>
                       {trip.available_seats > 10 ? "Available" : trip.available_seats > 0 ? "Few Left" : "Sold Out"}
                     </Badge>

@@ -308,7 +308,7 @@ const TripDetails = () => {
 
               <div>
                 <h4 className="font-medium mb-2">Base Price</h4>
-                <span className="text-2xl font-bold">${trip.base_price}</span>
+                <span className="text-2xl font-bold">₹{trip.base_price}</span>
               </div>
             </CardContent>
           </Card>
@@ -323,13 +323,13 @@ const TripDetails = () => {
                 {selectedSeats.map((seat) => (
                   <div key={seat.id} className="flex justify-between items-center">
                     <span>Seat {seat.seat_number}</span>
-                    <span className="font-medium">${seat.price}</span>
+                    <span className="font-medium">₹{seat.price}</span>
                   </div>
                 ))}
                 <Separator />
                 <div className="flex justify-between items-center font-bold">
                   <span>Total</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>₹{totalPrice.toFixed(2)}</span>
                 </div>
                 <Button 
                   className="w-full" 

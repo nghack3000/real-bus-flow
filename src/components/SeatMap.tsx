@@ -115,6 +115,9 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
   const getSeatStatus = (seat: Seat) => {
     if (seat.status === 'sold') return 'sold';
     
+    // Check if this seat is selected by current user
+    if (selectedSeats.includes(seat.id)) return 'my-hold';
+    
     const hold = seatHolds.find(h => h.seat_id === seat.id);
     if (hold) {
       const isExpired = new Date(hold.expires_at) <= new Date();
@@ -158,6 +161,13 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
           .update({ status: 'available' })
           .eq('id', seat.id);
 
+        // Update local state immediately for visual feedback
+        setSeats(prevSeats => 
+          prevSeats.map(s => 
+            s.id === seat.id ? { ...s, status: 'available' as const } : s
+          )
+        );
+
         const newSelectedSeats = selectedSeats.filter(id => id !== seat.id);
         setSelectedSeats(newSelectedSeats);
         onSeatSelect?.(newSelectedSeats);
@@ -197,6 +207,13 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
         .eq('id', seat.id);
 
       if (seatError) throw seatError;
+
+      // Update local state immediately for visual feedback
+      setSeats(prevSeats => 
+        prevSeats.map(s => 
+          s.id === seat.id ? { ...s, status: 'held' as const } : s
+        )
+      );
 
       const newSelectedSeats = [...selectedSeats, seat.id];
       setSelectedSeats(newSelectedSeats);
@@ -318,7 +335,7 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
                           size="sm"
                           className={`w-10 h-10 p-1 ${getSeatColor(seat)}`}
                           onClick={() => handleSeatClick(seat)}
-                          title={`Seat ${seat.seat_number} - $${seat.price}`}
+                          title={`Seat ${seat.seat_number} - ₹${seat.price}`}
                         >
                           <div className="flex flex-col items-center text-xs">
                             {getSeatIcon(seat)}
