@@ -145,7 +145,8 @@ const handler = async (req: Request): Promise<Response> => {
       attachments: [
         {
           filename: `ticket-${booking.bookingReference}.html`,
-          content: Buffer.from(pdfContent).toString('base64'),
+          content: new TextEncoder().encode(pdfContent),
+          type: 'text/html',
         },
       ],
     });

@@ -131,7 +131,7 @@ const Organizer = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold">${trip.base_price}</span>
+                    <span className="text-lg font-bold">₹{trip.base_price}</span>
                     <Badge variant={new Date(trip.booking_window_end) > new Date() ? "default" : "secondary"}>
                       {new Date(trip.booking_window_end) > new Date() ? "Active" : "Closed"}
                     </Badge>

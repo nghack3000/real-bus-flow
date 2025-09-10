@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TicketDownload } from '@/components/TicketDownload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MapPin, Clock, CreditCard, Ticket } from 'lucide-react';
@@ -151,7 +152,7 @@ const Bookings = () => {
 
                     <div className="flex items-center gap-2 text-sm">
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">${booking.total_amount.toFixed(2)}</span>
+                      <span className="font-medium">₹{booking.total_amount.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -164,13 +165,27 @@ const Bookings = () => {
                   </div>
 
                   {new Date(booking.bus_trips.departure_time) > new Date() && (
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" disabled>
-                        Download Ticket
-                      </Button>
-                      <Button variant="outline" size="sm" disabled>
-                        Cancel Booking
-                      </Button>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <TicketDownload 
+                        bookingReference={booking.booking_reference}
+                        tripDetails={{
+                          routeFrom: booking.bus_trips.route_from,
+                          routeTo: booking.bus_trips.route_to,
+                          departureTime: booking.bus_trips.departure_time,
+                          arrivalTime: booking.bus_trips.arrival_time,
+                          busType: booking.bus_trips.bus_type,
+                        }}
+                        passengerName={booking.passenger_name}
+                        seatNumbers={booking.seat_numbers}
+                        totalAmount={booking.total_amount}
+                      />
+                      <Card>
+                        <CardContent className="pt-6">
+                          <Button variant="outline" size="sm" disabled className="w-full">
+                            Cancel Booking
+                          </Button>
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
                 </CardContent>
