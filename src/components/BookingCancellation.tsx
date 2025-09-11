@@ -72,6 +72,15 @@ export const BookingCancellation = ({
   const onSubmit = async (values: z.infer<typeof cancellationSchema>) => {
     setIsLoading(true);
     try {
+      // First get the booking details including seat numbers and trip ID
+      const { data: bookingData, error: bookingFetchError } = await supabase
+        .from('bookings')
+        .select('trip_id, seat_numbers')
+        .eq('id', bookingId)
+        .single();
+
+      if (bookingFetchError) throw bookingFetchError;
+
       // Update booking status to cancelled
       const { error: updateError } = await supabase
         .from('bookings')
@@ -83,8 +92,19 @@ export const BookingCancellation = ({
 
       if (updateError) throw updateError;
 
+      // Update seat status from sold to available for cancelled seats
+      if (bookingData.seat_numbers && bookingData.seat_numbers.length > 0) {
+        const { error: seatUpdateError } = await supabase
+          .from('seats')
+          .update({ status: 'available' })
+          .eq('trip_id', bookingData.trip_id)
+          .in('seat_number', bookingData.seat_numbers);
+
+        if (seatUpdateError) throw seatUpdateError;
+      }
+
       // Send cancellation confirmation email
-      const { error: emailError } = await supabase.functions.invoke('send-booking-cancellation', {
+      const { error: emailError } = await supabase.functions.invoke('send-booking-cancellation-sendgrid', {
         body: {
           bookingReference,
           passengerName,
@@ -93,6 +113,7 @@ export const BookingCancellation = ({
             routeFrom: tripDetails.routeFrom,
             routeTo: tripDetails.routeTo,
             departureTime,
+            tripId: bookingData.trip_id,
           },
           cancellationDetails: {
             reason: values.reason,

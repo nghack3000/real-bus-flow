@@ -191,8 +191,19 @@ const Bookings = () => {
                           routeFrom: booking.bus_trips.route_from,
                           routeTo: booking.bus_trips.route_to,
                         }}
-                        onCancellationSuccess={fetchBookings}
-                      />
+                    onCancellationSuccess={fetchBookings}
+                  />
+                  )}
+
+                  {/* Show cancellation status for cancelled bookings */}
+                  {booking.payment_status === 'cancelled' && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
+                      <p className="text-destructive font-medium">This booking has been cancelled</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Refund will be processed within 3-5 business days
+                      </p>
+                    </div>
+                  )}
                     </div>
                   )}
 

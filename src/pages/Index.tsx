@@ -65,6 +65,7 @@ const Index = () => {
         `)
         .gte('booking_window_end', new Date().toISOString())
         .gte('departure_time', new Date().toISOString())
+        .not('organizer_id', 'is', null)
         .order('departure_time', { ascending: true });
 
       if (error) throw error;
