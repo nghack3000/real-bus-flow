@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TicketDownload } from '@/components/TicketDownload';
+import { BookingCancellation } from '@/components/BookingCancellation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MapPin, Clock, CreditCard, Ticket } from 'lucide-react';
@@ -164,7 +165,7 @@ const Bookings = () => {
                     </p>
                   </div>
 
-                  {new Date(booking.bus_trips.departure_time) > new Date() && (
+                  {new Date(booking.bus_trips.departure_time) > new Date() && booking.payment_status !== 'cancelled' && (
                     <div className="grid md:grid-cols-2 gap-4">
                       <TicketDownload 
                         bookingReference={booking.booking_reference}
@@ -179,13 +180,31 @@ const Bookings = () => {
                         seatNumbers={booking.seat_numbers}
                         totalAmount={booking.total_amount}
                       />
-                      <Card>
-                        <CardContent className="pt-6">
-                          <Button variant="outline" size="sm" disabled className="w-full">
-                            Cancel Booking
-                          </Button>
-                        </CardContent>
-                      </Card>
+                      <BookingCancellation
+                        bookingId={booking.id}
+                        bookingReference={booking.booking_reference}
+                        departureTime={booking.bus_trips.departure_time}
+                        totalAmount={booking.total_amount}
+                        passengerName={booking.passenger_name}
+                        passengerEmail={booking.passenger_email}
+                        tripDetails={{
+                          routeFrom: booking.bus_trips.route_from,
+                          routeTo: booking.bus_trips.route_to,
+                        }}
+                        onCancellationSuccess={fetchBookings}
+                      />
+                    </div>
+                  )}
+
+                  {booking.payment_status === 'cancelled' && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 text-red-700">
+                        <Ticket className="h-4 w-4" />
+                        <span className="font-medium">This booking has been cancelled</span>
+                      </div>
+                      <p className="text-sm text-red-600 mt-1">
+                        Refund will be processed within 3-5 business days.
+                      </p>
                     </div>
                   )}
                 </CardContent>
