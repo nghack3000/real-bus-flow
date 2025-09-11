@@ -122,8 +122,14 @@ const Bookings = () => {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge variant={booking.payment_status === 'completed' ? 'default' : 'secondary'}>
-                        {booking.payment_status}
+                      <Badge 
+                        variant={
+                          booking.payment_status === 'completed' ? 'default' : 
+                          booking.payment_status === 'cancelled' ? 'destructive' : 'secondary'
+                        }
+                      >
+                        {booking.payment_status === 'completed' ? 'Confirmed' : 
+                         booking.payment_status === 'cancelled' ? 'Cancelled' : 'Pending'}
                       </Badge>
                       <Badge variant="outline">{booking.bus_trips.bus_type}</Badge>
                     </div>
@@ -191,8 +197,9 @@ const Bookings = () => {
                           routeFrom: booking.bus_trips.route_from,
                           routeTo: booking.bus_trips.route_to,
                         }}
-                    onCancellationSuccess={fetchBookings}
-                  />
+                        onCancellationSuccess={fetchBookings}
+                      />
+                    </div>
                   )}
 
                   {/* Show cancellation status for cancelled bookings */}
@@ -201,20 +208,6 @@ const Bookings = () => {
                       <p className="text-destructive font-medium">This booking has been cancelled</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Refund will be processed within 3-5 business days
-                      </p>
-                    </div>
-                  )}
-                    </div>
-                  )}
-
-                  {booking.payment_status === 'cancelled' && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2 text-red-700">
-                        <Ticket className="h-4 w-4" />
-                        <span className="font-medium">This booking has been cancelled</span>
-                      </div>
-                      <p className="text-sm text-red-600 mt-1">
-                        Refund will be processed within 3-5 business days.
                       </p>
                     </div>
                   )}
