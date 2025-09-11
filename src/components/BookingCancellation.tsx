@@ -54,15 +54,14 @@ export const BookingCancellation = ({
   const hoursUntilDeparture = differenceInHours(new Date(departureTime), new Date());
   
   // Check if cancellation is allowed (6+ hours before departure)
-  const canCancel = hoursUntilDeparture >= 6;
+  const canCancel = hoursUntilDeparture >= 12;
 
   // Calculate cancellation fee based on timing
   const calculateCancellationFee = () => {
     if (hoursUntilDeparture >= 48) return 0.1; // 10% fee for 48+ hours
     if (hoursUntilDeparture >= 24) return 0.15; // 15% fee for 24-48 hours
     if (hoursUntilDeparture >= 12) return 0.25; // 25% fee for 12-24 hours
-    if (hoursUntilDeparture >= 6) return 0.4; // 40% fee for 6-12 hours
-    return 1; // 100% fee (no refund) for less than 6 hours
+    return 1; // 100% fee (no refund) for less than 12 hours
   };
 
   const cancellationFeePercentage = calculateCancellationFee();
@@ -104,7 +103,7 @@ export const BookingCancellation = ({
       }
 
       // Send cancellation confirmation email
-      const { error: emailError } = await supabase.functions.invoke('send-booking-cancellation-sendgrid', {
+      const { error: emailError } = await supabase.functions.invoke('send-booking-cancellation', {
         body: {
           bookingReference,
           passengerName,
@@ -155,7 +154,7 @@ export const BookingCancellation = ({
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm">Cannot cancel - less than 6 hours to departure</span>
+            <span className="text-sm">Cannot cancel - less than 12 hours to departure</span>
           </div>
           <Button variant="outline" size="sm" disabled className="w-full">
             Cancel Booking
@@ -171,7 +170,7 @@ export const BookingCancellation = ({
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span>{hoursUntilDeparture} hours until departure</span>
+            <span>{Math.max(0, hoursUntilDeparture)} hours until departure</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -188,6 +187,15 @@ export const BookingCancellation = ({
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Cancel Booking</DialogTitle>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-sm font-medium">Cancellation Policy</span>
+                </div>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Cancellation is only allowed 12+ hours before departure. Cancellation fees apply based on timing.
+                </p>
+              </div>
             </DialogHeader>
             
             <div className="space-y-4">

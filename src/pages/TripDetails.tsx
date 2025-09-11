@@ -202,35 +202,53 @@ const TripDetails = () => {
 
       // Send confirmation emails
       try {
-        const { data: tripData } = await supabase
+        // Get organizer email for the trip
+        const { data: tripWithOrganizer } = await supabase
           .from('bus_trips')
-          .select('*')
+          .select(`
+            *,
+            profiles!inner(email)
+          `)
           .eq('id', tripId!)
           .single();
 
-        if (tripData) {
-          await supabase.functions.invoke('send-booking-confirmation', {
+        if (tripWithOrganizer) {
+          const { error: emailError } = await supabase.functions.invoke('send-booking-confirmation', {
             body: {
               bookingReference,
               passengerName: profile?.full_name || user.user_metadata?.full_name || '',
               passengerEmail: profile?.email || user.email || '',
               tripDetails: {
-                routeFrom: tripData.route_from,
-                routeTo: tripData.route_to,
-                departureTime: tripData.departure_time,
-                arrivalTime: tripData.arrival_time,
-                busType: tripData.bus_type,
+                routeFrom: tripWithOrganizer.route_from,
+                routeTo: tripWithOrganizer.route_to,
+                departureTime: tripWithOrganizer.departure_time,
+                arrivalTime: tripWithOrganizer.arrival_time,
+                busType: tripWithOrganizer.bus_type,
               },
               seatNumbers: selectedSeats.map(s => s.seat_number),
               totalAmount,
+              organizerEmail: tripWithOrganizer.profiles?.email,
             },
           });
+
+          if (emailError) {
+            console.error('Email sending failed:', emailError);
+            toast({
+              title: "Booking confirmed, but email failed",
+              description: "Your booking is confirmed but we couldn't send the confirmation email. Please check your bookings page.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Booking confirmed!",
+              description: `Your booking reference is ${bookingReference}. Check your email for the ticket.`,
+            });
+          }
         }
       } catch (emailError) {
         console.error('Failed to send confirmation emails:', emailError);
-        // Don't block the booking process if email fails
-      }
-
+        toast({
+          title: "Booking confirmed, but email failed",
       navigate('/bookings');
     } catch (error) {
       console.error('Error completing booking:', error);

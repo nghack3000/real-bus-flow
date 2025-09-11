@@ -66,6 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <h3>Cancellation Details</h3>
             <p><strong>Cancelled:</strong> ${cancellationDetails.hoursBeforeDeparture} hours before departure</p>
+            <p><strong>Cancellation Policy:</strong> Cancellation allowed 12+ hours before departure</p>
             <p><strong>Reason:</strong> ${cancellationDetails.reason}</p>
             
             <div style="background: #FEE2E2; padding: 15px; border-radius: 8px; margin: 20px 0;">
