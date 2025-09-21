@@ -31,10 +31,10 @@ export const useWebSocket = ({
 
   useEffect(() => {
     // Connect to WebSocket server
-    const connect = () => {
+    const connect = () => { 
       try {
         // Use the project URL directly since VITE env vars aren't supported
-        const wsUrl = `wss://gimawoskyipbsanqolkc.functions.supabase.co/realtime-websocket`;
+        const wsUrl = `ws://localhost:8081`;
         ws.current = new WebSocket(wsUrl);
 
         ws.current.onopen = () => {
