@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Layout } from '@/components/Layout';
+import { PassengerList } from '@/components/PassengerList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -260,7 +261,11 @@ const ManageTrip = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* Real-time Passenger List */}
+          <PassengerList tripId={tripId!} organizerId={user.id} />
+
+          <div className="grid lg:grid-cols-2 gap-6">
           {/* Trip Details */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -436,6 +441,7 @@ const ManageTrip = () => {
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     </Layout>

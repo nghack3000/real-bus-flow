@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtime, useSeatUpdates } from '@/hooks/useRealtime';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle, Clock, X } from 'lucide-react';
 
@@ -76,6 +77,15 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
   useEffect(() => {
     fetchSeatsAndHolds();
   }, [fetchSeatsAndHolds]);
+
+  // WebSocket real-time updates
+  const { isConnected, sendMessage } = useWebSocket({
+    tripId,
+    onSeatUpdate: (data) => {
+      console.log('WebSocket seat update:', data);
+      fetchSeatsAndHolds();
+    },
+  });
 
   // Listen to realtime updates
   useSeatUpdates(useCallback((update: any) => {
@@ -218,6 +228,14 @@ export const SeatMap = ({ tripId, onSeatSelect }: SeatMapProps) => {
       const newSelectedSeats = [...selectedSeats, seat.id];
       setSelectedSeats(newSelectedSeats);
       onSeatSelect?.(newSelectedSeats);
+
+      // Broadcast seat hold via WebSocket
+      sendMessage({
+        type: 'seat_hold',
+        tripId,
+        seatId: seat.id,
+        data: { userId: user.id, seatNumber: seat.seat_number }
+      });
 
       toast({
         title: "Seat held",

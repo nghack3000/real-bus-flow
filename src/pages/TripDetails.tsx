@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { MapPin, Clock, Bus, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface Trip {
   id: string;
@@ -38,6 +39,14 @@ const TripDetails = () => {
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  // WebSocket for real-time updates
+  const { sendMessage } = useWebSocket({
+    tripId,
+    onBookingUpdate: (data) => {
+      console.log('Booking update received:', data);
+    },
+  });
 
   useEffect(() => {
     if (!tripId) return;
@@ -200,7 +209,7 @@ const TripDetails = () => {
         description: `Your booking reference is ${bookingReference}`,
       });
 
-      // Send confirmation emails
+      // Send confirmation emails and tickets
       try {
         const { data: tripData } = await supabase
           .from('bus_trips')
@@ -208,8 +217,21 @@ const TripDetails = () => {
           .eq('id', tripId!)
           .single();
 
+        // Get organizer email separately
+        let organizerEmail = null;
         if (tripData) {
-          await supabase.functions.invoke('send-booking-confirmation', {
+          const { data: organizerData } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('user_id', tripData.organizer_id)
+            .single();
+          
+          organizerEmail = organizerData?.email;
+        }
+
+        if (tripData) {
+          // Send ticket email with PDF
+          await supabase.functions.invoke('send-ticket-email', {
             body: {
               bookingReference,
               passengerName: profile?.full_name || user.user_metadata?.full_name || '',
@@ -223,8 +245,39 @@ const TripDetails = () => {
               },
               seatNumbers: selectedSeats.map(s => s.seat_number),
               totalAmount,
+              organizerEmail,
             },
           });
+
+          // Broadcast booking update via WebSocket
+          sendMessage({
+            type: 'booking_update',
+            tripId: tripId!,
+            data: {
+              bookingReference,
+              passengerName: profile?.full_name || user.user_metadata?.full_name || '',
+              seatNumbers: selectedSeats.map(s => s.seat_number),
+              totalAmount,
+            }
+          });
+
+          // Notify organizer via WebSocket for real-time passenger list update
+          if (tripData.organizer_id) {
+            sendMessage({
+              type: 'passenger_list_update',
+              tripId: tripId!,
+              organizerId: tripData.organizer_id,
+              data: {
+                newBooking: {
+                  bookingReference,
+                  passengerName: profile?.full_name || user.user_metadata?.full_name || '',
+                  passengerEmail: profile?.email || user.email || '',
+                  seatNumbers: selectedSeats.map(s => s.seat_number),
+                  totalAmount,
+                }
+              }
+            });
+          }
         }
       } catch (emailError) {
         console.error('Failed to send confirmation emails:', emailError);

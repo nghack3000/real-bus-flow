@@ -30,9 +30,46 @@ export const TicketDownload = ({
   const downloadTicket = async () => {
     setDownloading(true);
     try {
+      // Generate enhanced PDF ticket
+      const { data } = await supabase.functions.invoke('generate-pdf-ticket', {
+        body: {
+          bookingReference,
+          passengerName,
+          passengerEmail: 'passenger@example.com', // This should come from props
+          tripDetails,
+          seatNumbers,
+          totalAmount,
+        }
+      });
+
+      if (data?.htmlContent) {
+        // Download as HTML file
+        const blob = new Blob([data.htmlContent], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ticket-${bookingReference}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // Fallback to original HTML
+        const ticketHtml = generateTicketHTML();
+        const blob = new Blob([ticketHtml], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ticket-${bookingReference}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error downloading ticket:', error);
+      // Fallback to original HTML
       const ticketHtml = generateTicketHTML();
-      
-      // Create and download the file
       const blob = new Blob([ticketHtml], { type: 'text/html' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -42,8 +79,6 @@ export const TicketDownload = ({
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading ticket:', error);
     } finally {
       setDownloading(false);
     }
